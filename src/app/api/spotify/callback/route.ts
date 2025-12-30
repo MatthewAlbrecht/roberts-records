@@ -92,7 +92,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 }
 
 function getRedirectUri(request: NextRequest): string {
-  const origin = request.nextUrl.origin;
+  // In Vercel, use headers to get the actual host
+  const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || request.nextUrl.host;
+  const protocol = request.headers.get('x-forwarded-proto') || (request.nextUrl.protocol === 'https:' ? 'https' : 'http');
+  const origin = `${protocol}://${host}`;
   return `${origin}/api/spotify/callback`;
 }
 
