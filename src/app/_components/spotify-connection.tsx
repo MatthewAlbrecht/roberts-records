@@ -3,7 +3,7 @@
 import { useMutation } from "convex/react";
 import { Music2 } from "lucide-react";
 import { toast } from "sonner";
-import { api } from "../../convex/_generated/api";
+import { api } from "../../../convex/_generated/api";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
 
