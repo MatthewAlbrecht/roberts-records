@@ -63,7 +63,14 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     // Get the session user from cookie
     const sessionToken = request.cookies.get('session')?.value;
     if (!sessionToken) {
-      return NextResponse.redirect(new URL('/login?redirect=/', request.url));
+      console.error('No session cookie found in callback request');
+      console.error(
+        'Cookies:',
+        request.cookies.getAll().map((c) => c.name)
+      );
+      return NextResponse.redirect(
+        new URL('/login?redirect=/&error=no_session', request.url)
+      );
     }
 
     // Decode session to get userId
@@ -71,30 +78,57 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const userId = decoded.split(':')[0];
 
     if (!userId) {
-      return NextResponse.redirect(new URL('/login?redirect=/', request.url));
+      console.error('Failed to decode userId from session token');
+      console.error('Decoded session:', decoded);
+      return NextResponse.redirect(
+        new URL('/login?redirect=/&error=invalid_session', request.url)
+      );
     }
 
+    console.log('Processing Spotify connection for userId:', userId);
+
     // Store tokens in Convex
-    await fetchMutation(api.spotify.upsertConnection, {
-      userId,
-      accessToken: tokens.access_token,
-      refreshToken: tokens.refresh_token,
-      expiresIn: tokens.expires_in,
-      spotifyUserId: profile.id,
-      displayName: profile.display_name ?? undefined,
-    });
+    try {
+      await fetchMutation(api.spotify.upsertConnection, {
+        userId,
+        accessToken: tokens.access_token,
+        refreshToken: tokens.refresh_token,
+        expiresIn: tokens.expires_in,
+        spotifyUserId: profile.id,
+        displayName: profile.display_name ?? undefined,
+      });
+    } catch (mutationErr) {
+      console.error('Convex mutation failed:', mutationErr);
+      console.error('Mutation args:', {
+        userId,
+        spotifyUserId: profile.id,
+        hasAccessToken: !!tokens.access_token,
+        hasRefreshToken: !!tokens.refresh_token,
+      });
+      return NextResponse.redirect(
+        new URL('/?error=mutation_failed', request.url)
+      );
+    }
 
     return NextResponse.redirect(new URL('/?connected=true', request.url));
   } catch (err) {
     console.error('OAuth callback error:', err);
-    return NextResponse.redirect(new URL('/?error=unknown', request.url));
+    const errorMessage = err instanceof Error ? err.message : 'unknown';
+    return NextResponse.redirect(
+      new URL(`/?error=${encodeURIComponent(errorMessage)}`, request.url)
+    );
   }
 }
 
 function getRedirectUri(request: NextRequest): string {
   // In Vercel, use headers to get the actual host
-  const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || request.nextUrl.host;
-  const protocol = request.headers.get('x-forwarded-proto') || (request.nextUrl.protocol === 'https:' ? 'https' : 'http');
+  const host =
+    request.headers.get('x-forwarded-host') ||
+    request.headers.get('host') ||
+    request.nextUrl.host;
+  const protocol =
+    request.headers.get('x-forwarded-proto') ||
+    (request.nextUrl.protocol === 'https:' ? 'https' : 'http');
   const origin = `${protocol}://${host}`;
   return `${origin}/api/spotify/callback`;
 }

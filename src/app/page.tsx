@@ -2,7 +2,8 @@
 
 import { useMutation, useQuery } from "convex/react";
 import { Disc3 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
@@ -37,7 +38,20 @@ type TabValue = "history" | "rankings" | "tracks" | "albums";
 export default function AlbumsPage() {
 	const { userId, isLoading, connection, isConnected, getValidAccessToken } =
 		useSpotifyAuth();
+	const searchParams = useSearchParams();
 	const [activeTab, setActiveTab] = useState<TabValue>("history");
+	
+	// Check for error/success messages from OAuth callback
+	useEffect(() => {
+		const error = searchParams.get("error");
+		const connected = searchParams.get("connected");
+		
+		if (error) {
+			toast.error(`Spotify connection failed: ${error}`);
+		} else if (connected === "true") {
+			toast.success("Successfully connected to Spotify!");
+		}
+	}, [searchParams]);
 	const [yearFilter, setYearFilter] = useState<string>(() => {
 		return new Date().getFullYear().toString();
 	});
