@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery } from "convex/react";
 import { Disc3 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { api } from "../../convex/_generated/api";
@@ -35,13 +35,10 @@ import type {
 
 type TabValue = "history" | "rankings" | "tracks" | "albums";
 
-export default function AlbumsPage() {
-	const { userId, isLoading, connection, isConnected, getValidAccessToken } =
-		useSpotifyAuth();
+// Component that handles search params (needs Suspense boundary)
+function OAuthMessageHandler() {
 	const searchParams = useSearchParams();
-	const [activeTab, setActiveTab] = useState<TabValue>("history");
 	
-	// Check for error/success messages from OAuth callback
 	useEffect(() => {
 		const error = searchParams.get("error");
 		const connected = searchParams.get("connected");
@@ -52,6 +49,14 @@ export default function AlbumsPage() {
 			toast.success("Successfully connected to Spotify!");
 		}
 	}, [searchParams]);
+	
+	return null;
+}
+
+export default function AlbumsPage() {
+	const { userId, isLoading, connection, isConnected, getValidAccessToken } =
+		useSpotifyAuth();
+	const [activeTab, setActiveTab] = useState<TabValue>("history");
 	const [yearFilter, setYearFilter] = useState<string>(() => {
 		return new Date().getFullYear().toString();
 	});
@@ -311,6 +316,11 @@ export default function AlbumsPage() {
 
 	return (
 		<div className="container mx-auto max-w-6xl p-6">
+			{/* Handle OAuth callback messages */}
+			<Suspense fallback={null}>
+				<OAuthMessageHandler />
+			</Suspense>
+			
 			{/* Header */}
 			<div className="mb-6 flex items-start justify-between">
 				<div>
