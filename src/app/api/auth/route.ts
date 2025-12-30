@@ -25,6 +25,8 @@ export async function POST(request: Request) {
 			path: "/",
 			secure: env.NODE_ENV === "production",
 			maxAge: 60 * 60 * 24 * 7, // 7 days
+			// Set domain to work across www and non-www subdomains
+			...(env.NODE_ENV === "production" ? { domain: ".robertsrecords.com" } : {}),
 		});
 		return NextResponse.json({ ok: true });
 	}
