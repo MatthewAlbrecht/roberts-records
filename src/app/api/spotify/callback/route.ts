@@ -91,11 +91,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   }
 }
 
-function getRedirectUri(_request: NextRequest): string {
-  const baseUrl = process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : 'http://127.0.0.1:4444';
-  return `${baseUrl}/api/spotify/callback`;
+function getRedirectUri(request: NextRequest): string {
+  const origin = request.nextUrl.origin;
+  return `${origin}/api/spotify/callback`;
 }
 
 type SpotifyTokenResponse = {

@@ -1,3 +1,4 @@
+import type { NextRequest } from 'next/server';
 import { env } from '~/env.js';
 
 const SPOTIFY_AUTH_URL = 'https://accounts.spotify.com/authorize';
@@ -15,11 +16,11 @@ const SCOPES = [
   'user-modify-playback-state',
 ].join(' ');
 
-export function GET(): Response {
+export function GET(request: NextRequest): Response {
   const params = new URLSearchParams({
     client_id: env.SPOTIFY_CLIENT_ID,
     response_type: 'code',
-    redirect_uri: getRedirectUri(),
+    redirect_uri: getRedirectUri(request),
     scope: SCOPES,
     show_dialog: 'true',
   });
@@ -27,9 +28,7 @@ export function GET(): Response {
   return Response.redirect(`${SPOTIFY_AUTH_URL}?${params.toString()}`);
 }
 
-function getRedirectUri(): string {
-  const baseUrl = process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : 'http://127.0.0.1:4444';
-  return `${baseUrl}/api/spotify/callback`;
+function getRedirectUri(request: NextRequest): string {
+  const origin = request.nextUrl.origin;
+  return `${origin}/api/spotify/callback`;
 }
