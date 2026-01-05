@@ -110,6 +110,12 @@ export default function AlbumsPage() {
 	// Fetch all albums (for albums tab)
 	const allAlbums = useQuery(api.spotify.getAllAlbums, {});
 
+	// Fetch last sync run
+	const lastSyncRun = useQuery(
+		api.spotify.getLastSyncRun,
+		userId ? { userId } : "skip",
+	);
+
 	// Build a map of albumId -> rating for quick lookup
 	const albumRatings = useMemo(() => {
 		if (!userAlbums) return new Map<string, number>();
@@ -341,6 +347,7 @@ export default function AlbumsPage() {
 					<SyncAlbumsButton
 						isSyncing={isSyncing}
 						onSync={syncHistory}
+						lastSyncAt={lastSyncRun?.completedAt}
 						variant="outline"
 					/>
 				)}
@@ -361,8 +368,8 @@ export default function AlbumsPage() {
 							type="button"
 							onClick={() => setActiveTab("history")}
 							className={`flex-1 rounded-md px-4 py-2 font-medium text-sm transition-colors ${activeTab === "history"
-									? "bg-background text-foreground shadow-sm"
-									: "text-muted-foreground hover:text-foreground"
+								? "bg-background text-foreground shadow-sm"
+								: "text-muted-foreground hover:text-foreground"
 								}`}
 						>
 							History
@@ -371,8 +378,8 @@ export default function AlbumsPage() {
 							type="button"
 							onClick={() => setActiveTab("rankings")}
 							className={`flex-1 rounded-md px-4 py-2 font-medium text-sm transition-colors ${activeTab === "rankings"
-									? "bg-background text-foreground shadow-sm"
-									: "text-muted-foreground hover:text-foreground"
+								? "bg-background text-foreground shadow-sm"
+								: "text-muted-foreground hover:text-foreground"
 								}`}
 						>
 							Rankings
@@ -381,8 +388,8 @@ export default function AlbumsPage() {
 							type="button"
 							onClick={() => setActiveTab("tracks")}
 							className={`flex-1 rounded-md px-4 py-2 font-medium text-sm transition-colors ${activeTab === "tracks"
-									? "bg-background text-foreground shadow-sm"
-									: "text-muted-foreground hover:text-foreground"
+								? "bg-background text-foreground shadow-sm"
+								: "text-muted-foreground hover:text-foreground"
 								}`}
 						>
 							Tracks
@@ -391,8 +398,8 @@ export default function AlbumsPage() {
 							type="button"
 							onClick={() => setActiveTab("albums")}
 							className={`flex-1 rounded-md px-4 py-2 font-medium text-sm transition-colors ${activeTab === "albums"
-									? "bg-background text-foreground shadow-sm"
-									: "text-muted-foreground hover:text-foreground"
+								? "bg-background text-foreground shadow-sm"
+								: "text-muted-foreground hover:text-foreground"
 								}`}
 						>
 							Albums
