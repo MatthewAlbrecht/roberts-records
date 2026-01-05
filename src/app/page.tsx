@@ -38,18 +38,18 @@ type TabValue = "history" | "rankings" | "tracks" | "albums";
 // Component that handles search params (needs Suspense boundary)
 function OAuthMessageHandler() {
 	const searchParams = useSearchParams();
-	
+
 	useEffect(() => {
 		const error = searchParams.get("error");
 		const connected = searchParams.get("connected");
-		
+
 		if (error) {
 			toast.error(`Spotify connection failed: ${error}`);
 		} else if (connected === "true") {
 			toast.success("Successfully connected to Spotify!");
 		}
 	}, [searchParams]);
-	
+
 	return null;
 }
 
@@ -57,9 +57,7 @@ export default function AlbumsPage() {
 	const { userId, isLoading, connection, isConnected, getValidAccessToken } =
 		useSpotifyAuth();
 	const [activeTab, setActiveTab] = useState<TabValue>("history");
-	const [yearFilter, setYearFilter] = useState<string>(() => {
-		return new Date().getFullYear().toString();
-	});
+	const [yearFilter, setYearFilter] = useState<string | null>(null);
 	const [albumToRate, setAlbumToRate] = useState<AlbumToRate | null>(null);
 	const [trackToAddListen, setTrackToAddListen] = useState<TrackItem | null>(
 		null,
@@ -95,7 +93,7 @@ export default function AlbumsPage() {
 
 	// Fetch rated albums for the selected year (for the ranker)
 	const currentYear =
-		yearFilter === "all"
+		yearFilter === "all" || yearFilter === null
 			? new Date().getFullYear()
 			: Number.parseInt(yearFilter, 10);
 	const ratedAlbumsForYear = useQuery(
@@ -190,6 +188,16 @@ export default function AlbumsPage() {
 
 		return { albumsByTier: byTier, availableYears: sortedYears };
 	}, [userAlbums, yearFilter]);
+
+	// Default to most recent year with rankings
+	useEffect(() => {
+		if (yearFilter === null && availableYears.length > 0) {
+			const firstYear = availableYears[0];
+			if (firstYear !== undefined) {
+				setYearFilter(firstYear.toString());
+			}
+		}
+	}, [yearFilter, availableYears]);
 
 	function handleRateAlbum(listen: HistoryListen) {
 		const userAlbum = userAlbumsMap.get(listen.albumId);
@@ -320,7 +328,7 @@ export default function AlbumsPage() {
 			<Suspense fallback={null}>
 				<OAuthMessageHandler />
 			</Suspense>
-			
+
 			{/* Header */}
 			<div className="mb-6 flex items-start justify-between">
 				<div>
@@ -352,44 +360,40 @@ export default function AlbumsPage() {
 						<button
 							type="button"
 							onClick={() => setActiveTab("history")}
-							className={`flex-1 rounded-md px-4 py-2 font-medium text-sm transition-colors ${
-								activeTab === "history"
+							className={`flex-1 rounded-md px-4 py-2 font-medium text-sm transition-colors ${activeTab === "history"
 									? "bg-background text-foreground shadow-sm"
 									: "text-muted-foreground hover:text-foreground"
-							}`}
+								}`}
 						>
 							History
 						</button>
 						<button
 							type="button"
 							onClick={() => setActiveTab("rankings")}
-							className={`flex-1 rounded-md px-4 py-2 font-medium text-sm transition-colors ${
-								activeTab === "rankings"
+							className={`flex-1 rounded-md px-4 py-2 font-medium text-sm transition-colors ${activeTab === "rankings"
 									? "bg-background text-foreground shadow-sm"
 									: "text-muted-foreground hover:text-foreground"
-							}`}
+								}`}
 						>
 							Rankings
 						</button>
 						<button
 							type="button"
 							onClick={() => setActiveTab("tracks")}
-							className={`flex-1 rounded-md px-4 py-2 font-medium text-sm transition-colors ${
-								activeTab === "tracks"
+							className={`flex-1 rounded-md px-4 py-2 font-medium text-sm transition-colors ${activeTab === "tracks"
 									? "bg-background text-foreground shadow-sm"
 									: "text-muted-foreground hover:text-foreground"
-							}`}
+								}`}
 						>
 							Tracks
 						</button>
 						<button
 							type="button"
 							onClick={() => setActiveTab("albums")}
-							className={`flex-1 rounded-md px-4 py-2 font-medium text-sm transition-colors ${
-								activeTab === "albums"
+							className={`flex-1 rounded-md px-4 py-2 font-medium text-sm transition-colors ${activeTab === "albums"
 									? "bg-background text-foreground shadow-sm"
 									: "text-muted-foreground hover:text-foreground"
-							}`}
+								}`}
 						>
 							Albums
 						</button>
@@ -412,7 +416,7 @@ export default function AlbumsPage() {
 						<RankingsView
 							albumsByTier={albumsByTier}
 							availableYears={availableYears}
-							yearFilter={yearFilter}
+							yearFilter={yearFilter ?? "all"}
 							onYearFilterChange={setYearFilter}
 							isLoading={userAlbums === undefined}
 							onUpdateRating={(userAlbumId, rating, position) => {
@@ -453,13 +457,13 @@ export default function AlbumsPage() {
 						? trackToAddListen
 						: albumToAddListen
 							? {
-									trackName: albumToAddListen.name,
-									artistName: albumToAddListen.artistName,
-									albumName: albumToAddListen.name,
-									albumImageUrl: albumToAddListen.imageUrl,
-									spotifyAlbumId: albumToAddListen.spotifyAlbumId,
-									releaseDate: albumToAddListen.releaseDate,
-								}
+								trackName: albumToAddListen.name,
+								artistName: albumToAddListen.artistName,
+								albumName: albumToAddListen.name,
+								albumImageUrl: albumToAddListen.imageUrl,
+								spotifyAlbumId: albumToAddListen.spotifyAlbumId,
+								releaseDate: albumToAddListen.releaseDate,
+							}
 							: null
 				}
 				open={trackToAddListen !== null || albumToAddListen !== null}
